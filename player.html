@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNO</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: url('/bg.png') center center / cover no-repeat fixed;
+      color: white;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      text-align: center;
+      padding: 24px 16px;
+    }
+    .glass {
+      background: rgba(20, 10, 60, 0.55);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-size: 38px;
+      letter-spacing: 6px;
+      text-shadow: 0 0 20px #c084fc, 0 2px 8px #000;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #c4b5fd;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    input {
+      padding: 14px;
+      font-size: 18px;
+      border-radius: 16px;
+      border: 2px solid #a855f7;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      width: 85%;
+      margin-bottom: 14px;
+      outline: none;
+      text-align: center;
+    }
+    input::placeholder { color: #c4b5fd; }
+    .btn-main {
+      padding: 14px 40px;
+      font-size: 18px;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(168,85,247,0.5);
+      font-weight: bold;
+      letter-spacing: 1px;
+      width: 85%;
+    }
+    .section-label {
+      font-size: 11px;
+      color: #c4b5fd;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    #top-card {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 112px;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      background-size: cover;
+      background-position: center;
+      text-shadow: 0 1px 4px rgba(255,255,255,0.8);
+    }
+    #turn-indicator {
+      font-size: 16px;
+      padding: 10px 20px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-top: 10px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    #turn-indicator.my-turn {
+      background: rgba(34,197,94,0.25);
+      border-color: #22c55e;
+      box-shadow: 0 0 16px rgba(34,197,94,0.3);
+    }
+    #hand {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .card {
+      width: 74px;
+      height: 104px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      border: 3px solid rgba(255,255,255,0.15);
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      user-select: none;
+    }
+    .card.selected {
+      border: 3px solid white;
+      transform: translateY(-14px);
+      box-shadow: 0 14px 28px rgba(255,255,255,0.25);
+    }
+    .R { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+    .G { background: linear-gradient(135deg, #95c480, #85a773); }
+    .B { background: linear-gradient(135deg, #a2c7e8, #94b6d4); }
+    .Y { background: linear-gradient(135deg, #f2cd59, #c89b5c); }
+    .W { background: linear-gradient(135deg, #c4affb, #7b60a5); }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 6px;
+    }
+    #play-btn {
+      flex: 1;
+      padding: 14px;
+      font-size: 16px;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 4px 16px rgba(168,85,247,0.4);
+    }
+    #draw-btn {
+      flex: 1;
+      padding: 14px;
+      font-size: 16px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #game-screen { display: none; }
+    #player-name-display {
+      font-size: 13px;
+      color: #c4b5fd;
+      margin-bottom: 12px;
+    }
+
+    #color-picker, #rules-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      padding: 20px;
+    }
+    #color-picker.show, #rules-overlay.show { display: flex; }
+    #color-picker h2 { font-size: 22px; margin-bottom: 8px; }
+    .color-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 20px;
+    }
+    .color-btn {
+      width: 110px;
+      height: 110px;
+      border-radius: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .color-btn.R { background: linear-gradient(135deg, #ffb3b3, #b91c1c); }
+    .color-btn.G { background: linear-gradient(135deg, #22c55e, #15803d); }
+    .color-btn.B { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+    .color-btn.Y { background: linear-gradient(135deg, #eab308, #a16207); }
+
+    /* Rules popup */
+    #rules-overlay .glass {
+      max-width: 360px;
+      text-align: left;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #rules-overlay h2 {
+      font-size: 24px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .rule-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+    .rule-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    .rule-divider {
+      border-top: 1px solid rgba(255,255,255,0.2);
+      margin: 14px 0;
+    }
+    #rules-overlay .btn-main {
+      margin-top: 16px;
+    }
+
+    /* Emote button + picker */
+    #emote-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      border: 2px solid rgba(255,255,255,0.3);
+      font-size: 26px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      z-index: 50;
+    }
+    #emote-picker {
+      display: none;
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      background: rgba(20,10,60,0.9);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 18px;
+      padding: 12px;
+      gap: 10px;
+      z-index: 50;
+    }
+    #emote-picker.show { display: flex; }
+    .emote-option {
+      width: 54px;
+      height: 54px;
+      border-radius: 12px;
+      background-size: cover;
+      background-position: center;
+      cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="join-screen">
+    <h1>UNO</h1>
+    <p class="subtitle">Mobile Hand</p>
+    <div class="glass">
+      <input id="name-input" type="text" placeholder="Enter your name" /><br>
+      <button class="btn-main" id="join-btn">Join Game ✨</button>
+    </div>
+  </div>
+
+  <div id="game-screen">
+    <h1>UNO</h1>
+    <div id="player-name-display"></div>
+
+    <div class="glass">
+      <p class="section-label">Top Card</p>
+      <div id="top-card">--</div>
+      <div id="turn-indicator">⏳ Waiting...</div>
+    </div>
+
+    <div class="glass">
+      <p class="section-label">Your Hand</p>
+      <div id="hand"></div>
+      <div class="action-buttons">
+        <button id="play-btn">▶ Play Card</button>
+        <button id="draw-btn">Draw</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="color-picker">
+    <h2>Choose a color</h2>
+    <div class="color-options">
+      <button class="color-btn R" onclick="chooseColor('R')">🔴 Red</button>
+      <button class="color-btn G" onclick="chooseColor('G')">🟢 Green</button>
+      <button class="color-btn B" onclick="chooseColor('B')">🔵 Blue</button>
+      <button class="color-btn Y" onclick="chooseColor('Y')">🟡 Yellow</button>
+    </div>
+  </div>
+
+  <div id="rules-overlay" class="show">
+    <div class="glass">
+      <h2>How to read cards</h2>
+      <div class="rule-row"><div class="rule-swatch" style="background:#ef4444;"></div> R = Red</div>
+      <div class="rule-row"><div class="rule-swatch" style="background:#22c55e;"></div> G = Green</div>
+      <div class="rule-row"><div class="rule-swatch" style="background:#3b82f6;"></div> B = Blue</div>
+      <div class="rule-row"><div class="rule-swatch" style="background:#eab308;"></div> Y = Yellow</div>
+      <div class="rule-row"><div class="rule-swatch" style="background:#a855f7;"></div> W = Wild (any color)</div>
+      <div class="rule-divider"></div>
+      <div class="rule-row">🔢 Numbers = match number or color</div>
+      <div class="rule-row">⛔ X = Skip next player</div>
+      <div class="rule-row">🔁 R = Reverse turn order</div>
+      <div class="rule-row">➕2 = Next player draws 2 cards</div>
+      <div class="rule-row">🌈 WW = Wild, pick any color</div>
+      <div class="rule-divider"></div>
+      <div class="rule-row">🎯 Goal: be the first to play all your cards!</div>
+      <button class="btn-main" onclick="closeRules()">Got it!</button>
+    </div>
+  </div>
+
+  <button id="emote-btn">😊</button>
+  <div id="emote-picker">
+    <div class="emote-option" style="background-image:url('/Apple.webp')" onclick="sendEmote('Apple.webp')"></div>
+    <div class="emote-option" style="background-image:url('/Grape.webp')" onclick="sendEmote('Grape.webp')"></div>
+    <div class="emote-option" style="background-image:url('/limon.webp')" onclick="sendEmote('limon.webp')"></div>
+    <div class="emote-option" style="background-image:url('/nah.webp')" onclick="sendEmote('nah.webp')"></div>
+    <div class="emote-option" style="background-image:url('/SoHAPPY.webp')" onclick="sendEmote('SoHAPPY.webp')"></div>
+  </div>
+
+  <script>
+    var socket = io();
+    var myHand = [];
+    var selectedIndex = null;
+
+    function closeRules() {
+      document.getElementById("rules-overlay").classList.remove("show");
+    }
+
+    document.getElementById("emote-btn").addEventListener("click", function() {
+      document.getElementById("emote-picker").classList.toggle("show");
+    });
+
+    function sendEmote(name) {
+      socket.emit("send_emote", name);
+      document.getElementById("emote-picker").classList.remove("show");
+    }
+
+    document.getElementById("join-btn").addEventListener("click", function() {
+      var name = document.getElementById("name-input").value.trim();
+      if (!name) return;
+      socket.emit("join", name);
+      document.getElementById("player-name-display").textContent = "Playing as " + name;
+      document.getElementById("join-screen").style.display = "none";
+      document.getElementById("game-screen").style.display = "block";
+    });
+
+    socket.on("your_hand", function(hand) {
+      myHand = hand;
+      selectedIndex = null;
+      renderHand();
+    });
+
+    socket.on("game_state", function(state) {
+      var tc = state.topCard;
+      var topEl = document.getElementById("top-card");
+      topEl.textContent = tc.name;
+      var imgMap = { R: "red1.webp", G: "green1.webp", B: "blue1.webp", Y: "yellow1.webp", W: "purple2.webp" };
+      topEl.style.backgroundImage = "url('/" + (imgMap[tc.color] || "purple2.webp") + "')";
+
+      var turnEl = document.getElementById("turn-indicator");
+      if (state.currentPlayerId === socket.id) {
+        turnEl.textContent = "✅ Your turn!";
+        turnEl.className = "my-turn";
+      } else {
+        turnEl.textContent = "⏳ " + (state.currentPlayerName || "Other player") + "'s turn";
+        turnEl.className = "";
+      }
+    });
+
+    socket.on("error_msg", function(msg) {
+      alert(msg);
+    });
+
+    socket.on("game_over", function(msg) {
+      alert("🎉 " + msg);
+    });
+
+    socket.on("pick_color", function() {
+      document.getElementById("color-picker").classList.add("show");
+    });
+
+    function chooseColor(color) {
+      document.getElementById("color-picker").classList.remove("show");
+      socket.emit("wild_color", color);
+    }
+
+    function renderHand() {
+      var handEl = document.getElementById("hand");
+      handEl.innerHTML = "";
+      myHand.forEach(function(card, i) {
+        var div = document.createElement("div");
+        div.className = "card " + card.color;
+        if (i === selectedIndex) div.classList.add("selected");
+        div.textContent = card.name;
+        div.onclick = function() {
+          selectedIndex = (selectedIndex === i) ? null : i;
+          renderHand();
+        };
+        handEl.appendChild(div);
+      });
+    }
+
+    document.getElementById("play-btn").addEventListener("click", function() {
+      if (selectedIndex === null) {
+        alert("Tap a card first!");
+        return;
+      }
+      socket.emit("play_card", myHand[selectedIndex]);
+      selectedIndex = null;
+    });
+
+    document.getElementById("draw-btn").addEventListener("click", function() {
+      socket.emit("draw_card");
+    });
+  </script>
+</body>
+</html>

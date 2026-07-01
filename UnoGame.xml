@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="UnoGame" extends="Group">
+<interface>
+    <field id="playerList" type="stringarray" />
+  </interface>
+    <script type="text/brightscript" uri="pkg:/components/Game1/UnoGame.brs" />
+    <children>
+           <Poster id="hSi" uri="pkg:/images/unoX.png" width="1280" height="720"
+     translation="[0, 0]" />
+        <Group translation="[480,50]" scale="[1,1]">
+            <Label id="playerName" text="" 
+            color="0x000000ff"  
+            horizAlign="center" vertAlign="center" />
+        </Group>
+        <Poster
+            id = "topCardBackground"
+            uri = ""
+            width = "240"
+            height = "290"
+            translation = "[550, 160]" />
+        <Group translation="[610,270]" scale="[2,2]">
+            <Label id="topCard" 
+            text="UNO GAME test" 
+            color="0x000000ff" 
+            font="font:ExtraLargeSystemFont" horizAlign="center"
+             vertAlign="center" />
+        </Group>
+          <LayoutGroup 
+    id="cardBackgrounds" 
+    translation="[30, 510]" 
+    layoutDirection="horizontal" 
+    itemSpacings="[10]" 
+/>
+            <buttonGroup id="playerCards" 
+            color="0x000000FF" textcolor="0x000000FF" translation="[25,510]" 
+            buttonheight="150" maxWidth="140" minWidth="120" 
+            layoutDirection="horizontal" buttons='["1", "2","3"]' 
+            horizAlign="center" itemSpacings="[10]"
+             uri="pkg:/images/god.png"
+            />
+        <Group translation="[1060,140]">
+            <buttonGroup id="playerActions" textcolor="dfbfff" maxWidth="200" minWidth="200" buttonheight="70" buttons='["Draw card", "Play card","test"]' iconUri="" itemSpacings="[-5]" />
+        </Group>
+    </children>
+</component>
