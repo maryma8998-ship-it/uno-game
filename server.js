@@ -14,7 +14,11 @@ app.get("/", (req, res) => {
 app.get("/state", (req, res) => {
   res.json(getPublicState());
 });
+let lastEmote = null;
 
+app.get("/emotes", (req, res) => {
+  res.json(lastEmote || {});
+});
 function createDeck() {
   const cards = [];
   const colors = ["R", "G", "B", "Y"];
@@ -84,10 +88,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send_emote", (emoteName) => {
-    const player = players[socket.id];
-    if (!player) return;
-    io.emit("show_emote", { name: player.name, emote: emoteName });
-  });
+      const player = players[socket.id];
+      if (!player) return;
+      lastEmote = { name: player.name, emote: emoteName, time: Date.now() };
+      io.emit("show_emote", { name: player.name, emote: emoteName });
+    });
 
   socket.on("play_card", (card) => {
     if (playerOrder[currentTurn] !== socket.id) {
