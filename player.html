@@ -379,13 +379,14 @@
       renderHand();
     });
 
-    socket.on("game_state", function(state) {
+socket.on("game_state", function(state) {
       var tc = state.topCard;
       var topEl = document.getElementById("top-card");
-      topEl.textContent = tc.name;
-      var imgMap = { R: "red1.webp", G: "green1.webp", B: "blue1.webp", Y: "yellow1.webp", W: "purple2.webp" };
-      topEl.style.backgroundImage = "url('/" + (imgMap[tc.color] || "purple2.webp") + "')";
-
+      if (topEl && tc) {
+        topEl.textContent = tc.name;
+        var imgMap = { R: "red1.webp", G: "green1.webp", B: "blue1.webp", Y: "yellow1.webp", W: "purple2.webp" };
+        topEl.style.backgroundImage = "url('/" + (imgMap[tc.color] || "purple2.webp") + "')";
+      }
       var turnEl = document.getElementById("turn-indicator");
       if (state.currentPlayerId === socket.id) {
         turnEl.textContent = "✅ Your turn!";
