@@ -78,7 +78,14 @@ io.on("connection", (socket) => {
     socket.emit("game_state", getPublicState());
   });
 
-  socket.on("join", (name) => {
+socket.on("join", (name) => {
+    // Reset game if no players or deck is empty
+    if (playerOrder.length === 0 || deck.length < 7) {
+      deck = createDeck();
+      topCard = deck.pop();
+      currentTurn = 0;
+    }
+    
     const hand = [drawOne(), drawOne(), drawOne(), drawOne(), drawOne(), drawOne(), drawOne()].filter(Boolean);
     players[socket.id] = { name, cards: hand };
     playerOrder.push(socket.id);
