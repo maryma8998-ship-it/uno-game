@@ -79,11 +79,13 @@ io.on("connection", (socket) => {
   });
 
 socket.on("join", (name) => {
-    // Reset game if no players or deck is empty
-    if (playerOrder.length === 0 || deck.length < 7) {
-      deck = createDeck();
-      topCard = deck.pop();
-      currentTurn = 0;
+    // Reset game completely when first player joins
+    if (playerOrder.length === 0) {
+        deck = createDeck();
+        topCard = deck.pop();
+        currentTurn = 0;
+        players = {};
+        waitingForColor = false;
     }
     
     const hand = [drawOne(), drawOne(), drawOne(), drawOne(), drawOne(), drawOne(), drawOne()].filter(Boolean);
